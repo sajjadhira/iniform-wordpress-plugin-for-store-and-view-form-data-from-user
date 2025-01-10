@@ -39,29 +39,21 @@ function iniform_form_shortcode()
 {
     ob_start();
 ?>
-    <form method="post" action="">
-        <label for="iniform-name">Name:</label><br>
-        <input type="text" id="iniform-name" name="iniform_name" required><br><br>
 
-        <label for="iniform-phone">Phone Number:</label><br>
-        <input type="text" id="iniform-phone" name="iniform_phone" pattern="\d{11}" required><br><br>
-
-        <label for="iniform-interest">Interest:</label><br>
-        <select id="iniform-interest" name="iniform_interest" required>
-            <option value="Business Kickstart">Business Kickstart</option>
-            <option value="Business Marketing">Business Marketing</option>
-            <option value="Business Creation">Business Creation</option>
-            <option value="Other">Other</option>
-        </select><br><br>
-
-        <label for="iniform-description">Description:</label><br>
-        <textarea id="iniform-description" name="iniform_description" required></textarea><br><br>
-
-        <input type="submit" name="iniform_submit" value="Submit">
-    </form>
-<?php
+    <?php
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['iniform_submit'])) {
+
+    ?>
+        <style>
+            .success-message {
+                color: green;
+                font-weight: bold;
+                margin-top: 20px;
+                text-align: center;
+            }
+        </style>
+        <?php
         global $wpdb;
         $table_name = $wpdb->prefix . 'iniform_submissions';
 
@@ -86,10 +78,72 @@ function iniform_form_shortcode()
                     '%s'
                 ]
             );
-            echo '<p>Thank you for your submission!</p>';
+            echo '<p class="success-message">Thank you for your submission!</p>';
         } else {
             echo '<p>Invalid phone number. Please ensure it is 11 digits.</p>';
         }
+    } else {
+        ?>
+        <style>
+            .iniform-form {
+                max-width: 600px;
+                margin: 20px auto;
+                padding: 15px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .iniform-form label {
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .iniform-form input,
+            .iniform-form select,
+            .iniform-form textarea {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 15px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+
+            .iniform-form input[type="submit"] {
+                background-color: #0073aa;
+                color: white;
+                border: none;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+            .iniform-form input[type="submit"]:hover {
+                background-color: #005f8d;
+            }
+        </style>
+        <form method="post" action="" class="iniform-form">
+            <label for="iniform-name">Name:</label>
+            <input type="text" id="iniform-name" name="iniform_name" placeholder="Your Name" required>
+
+            <label for="iniform-phone">Phone Number:</label>
+            <input type="text" id="iniform-phone" name="iniform_phone" pattern="\d{11}" placeholder="Your 11 Digit Phone Number" required>
+
+            <label for="iniform-interest">Interest:</label>
+            <select id="iniform-interest" name="iniform_interest" required>
+                <option value="">Select Interest</option>
+                <option value="Business Kickstart">Business Kickstart</option>
+                <option value="Business Marketing">Business Marketing</option>
+                <option value="Business Creation">Business Creation</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="iniform-description">Description:</label>
+            <textarea id="iniform-description" name="iniform_description" placeholder="Type your message...." required></textarea>
+
+            <input type="submit" name="iniform_submit" value="Submit">
+        </form>
+    <?php
     }
 
     return ob_get_clean();
@@ -100,8 +154,8 @@ add_shortcode('iniform_form', 'iniform_form_shortcode');
 function iniform_admin_menu()
 {
     add_menu_page(
-        'IniForm Submissions',
-        'IniForm Submissions',
+        'IniForm',
+        'IniForm',
         'manage_options',
         'iniform-submissions',
         'iniform_display_submissions',
@@ -116,6 +170,12 @@ function iniform_display_submissions()
     global $wpdb;
     $table_name = $wpdb->prefix . 'iniform_submissions';
 
+    if (isset($_GET['delete'])) {
+        $delete_id = absint($_GET['delete']);
+        $wpdb->delete($table_name, ['id' => $delete_id], ['%d']);
+        echo '<div class="updated"><p>Submission deleted.</p></div>';
+    }
+
     $page = isset($_GET['paged']) ? absint($_GET['paged']) : 1;
     $limit = 10;
     $offset = ($page - 1) * $limit;
@@ -129,11 +189,70 @@ function iniform_display_submissions()
         $offset
     ));
 
+
+
     echo '<div class="wrap">';
-    echo '<h1>IniForm Submissions</h1>';
+    echo '<h1>IniForm</h1>';
+    ?>
+    <style>
+        .iniform-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+            text-align: left;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .iniform-table th,
+        .iniform-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+
+        .iniform-table th {
+            background-color: #0073aa;
+            color: white;
+        }
+
+        .iniform-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .iniform-table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .iniform-pagination {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .iniform-pagination a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            text-decoration: none;
+            color: #0073aa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .iniform-pagination a:hover {
+            background-color: #0073aa;
+            color: white;
+        }
+
+        .no-data {
+            font-size: 18px;
+            color: #ff0000;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+<?php
 
     if ($submissions) {
-        echo '<table class="widefat fixed" cellspacing="0">
+        echo '<table class="iniform-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -141,6 +260,7 @@ function iniform_display_submissions()
                     <th>Phone Number</th>
                     <th>Interest</th>
                     <th>Date Submitted</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -153,6 +273,7 @@ function iniform_display_submissions()
                 <td><a href="tel:' . esc_html($submission->phone_number) . '">' . esc_html($submission->phone_number) . '</a></td>
                 <td>' . esc_html($submission->interest) . '</td>
                 <td>' . esc_html($submission->created_at) . '</td>
+                <td><a href="' . admin_url('admin.php?page=iniform-submissions&delete=' . $submission->id) . '" onclick="return confirm(\'Are you sure you want to delete this submission?\')">Delete</a></td>
             </tr>';
         }
 
@@ -166,11 +287,11 @@ function iniform_display_submissions()
             'current' => $page
         ];
 
-        echo '<div class="tablenav"><div class="tablenav-pages">';
+        echo '<div class="iniform-pagination">';
         echo paginate_links($pagination_args);
-        echo '</div></div>';
+        echo '</div>';
     } else {
-        echo '<p>No submissions found.</p>';
+        echo '<p class="no-data">No submissions found.</p>';
     }
 
     echo '</div>';
